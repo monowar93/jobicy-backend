@@ -11,6 +11,9 @@ import { JobsModule } from '@/jobs/jobs.module';
 import { MaintenanceModule } from '@/maintenance/maintenance.module';
 import { RealtimeModule } from '@/realtime/realtime.module';
 import { SavedJobsModule } from '@/saved-jobs/saved-jobs.module';
+import { AlertsModule } from '@/alerts/alerts.module';
+import { AnalyticsModule } from '@/analytics/analytics.module';
+import { QueueModule } from '@/queue/queue.module';
 import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -42,6 +45,9 @@ void ALIAS_CHECK;
     RealtimeModule,
     IngestionModule,
     MaintenanceModule,
+    AlertsModule,
+    AnalyticsModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [

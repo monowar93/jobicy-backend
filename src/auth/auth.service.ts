@@ -57,7 +57,7 @@ export class AuthService {
       TokenType.EMAIL_VERIFY,
     );
     const link = this.buildFrontendLink(`/verify-email?token=${verifyToken}`);
-    this.emailService.sendVerifyEmail(user.email, link);
+    await this.emailService.sendVerifyEmail(user.email, link);
 
     return { user: toUserDto(user) };
   }
@@ -139,7 +139,7 @@ export class AuthService {
         TokenType.PASSWORD_RESET,
       );
       const link = this.buildFrontendLink(`/reset-password?token=${resetToken}`);
-      this.emailService.sendResetPassword(user.email, link);
+      await this.emailService.sendResetPassword(user.email, link);
     }
 
     return { success: true };

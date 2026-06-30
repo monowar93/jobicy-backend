@@ -13,9 +13,10 @@ import { RemoteJobsAdapter } from '@/ingestion/adapters/remote-jobs.adapter';
 import { GlassdoorAdapter } from '@/ingestion/adapters/glassdoor.adapter';
 import { IngestionService } from '@/ingestion/ingestion.service';
 import { RealtimeModule } from '@/realtime/realtime.module';
+import { AlertsModule } from '@/alerts/alerts.module';
 
 @Module({
-  imports: [JobsModule, RealtimeModule],
+  imports: [JobsModule, RealtimeModule, AlertsModule],
   providers: [
     JsearchAdapter,
     ActiveJobsDbAdapter,

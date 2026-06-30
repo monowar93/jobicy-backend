@@ -12,6 +12,7 @@ import {
   NormalizedJobInput,
 } from '@/ingestion/adapters/job-source.adapter';
 import { RealtimeService } from '@/realtime/realtime.service';
+import { AlertsService } from '@/alerts/alerts.service';
 
 /** Summary returned after a successful ingestion run. */
 export interface IngestionRunResult {
@@ -29,6 +30,7 @@ export class IngestionService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly realtime: RealtimeService,
+    private readonly alertsService: AlertsService,
     @Inject(JOB_SOURCE_ADAPTERS)
     private readonly adapters: JobSourceAdapter[],
   ) {}
@@ -71,7 +73,10 @@ export class IngestionService {
       const stats = await this.computeLiveStats();
       this.realtime.emitStats(stats);
 
-      // Phase 6: AlertsService.matchJobToAlerts(job) for each new job.
+      // Instant alert emails for each newly ingested job.
+      for (const job of allNewJobs) {
+        await this.alertsService.matchJobToAlerts(job);
+      }
     }
 
     return {

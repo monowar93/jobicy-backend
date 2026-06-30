@@ -8,6 +8,10 @@
       {
         "include": "generated/**/*",
         "watchAssets": true
+      },
+      {
+        "include": "email/templates/**/*",
+        "watchAssets": true
       }
     ]
   },
