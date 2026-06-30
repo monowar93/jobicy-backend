@@ -6,7 +6,9 @@ import { WinstonModule } from 'nest-winston';
 import { ALIAS_CHECK } from '@/alias-check';
 import { AuthModule } from '@/auth/auth.module';
 import { ApplicationsModule } from '@/applications/applications.module';
+import { IngestionModule } from '@/ingestion/ingestion.module';
 import { JobsModule } from '@/jobs/jobs.module';
+import { RealtimeModule } from '@/realtime/realtime.module';
 import { SavedJobsModule } from '@/saved-jobs/saved-jobs.module';
 import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
@@ -36,6 +38,8 @@ void ALIAS_CHECK;
     SavedJobsModule,
     ApplicationsModule,
     JobsModule,
+    RealtimeModule,
+    IngestionModule,
   ],
   controllers: [AppController],
   providers: [

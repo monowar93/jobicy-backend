@@ -24,26 +24,39 @@ export const SKILL_MAP: Record<string, string> = {
 };
 
 /**
- * Lowercases, trims, strips seniority words, and collapses whitespace.
+ * Normalizes a job title for deduplication so the same posting from different
+ * sources collapses to one fingerprint. Removes bracketed notes, seniority and
+ * level markers, work-arrangement words, and separators, then collapses spaces.
+ * Example: "Senior Software Engineer (Remote) - II" → "software engineer".
  */
 export function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
-    .trim()
-    .replace(/\b(sr|jr|senior|junior)\b\.?/gi, '')
+    .replace(/[([{][^)\]}]*[)\]}]/g, ' ') // drop "(...)", "[...]", "{...}"
+    .replace(/\b(sr|jr|senior|junior|mid|entry|lead|principal|staff)[\s-]?(level)?\b\.?/gi, ' ')
+    .replace(/\b(remote|hybrid|on[\s-]?site|onsite|contract|full[\s-]?time|part[\s-]?time)\b/gi, ' ')
+    .replace(/\b(i{1,3}|iv|v|vi{0,3})\b/gi, ' ') // trailing roman-numeral levels
+    .replace(/[/|,\-–—_:]+/g, ' ') // separators → space
+    .replace(/[^a-z0-9+#. ]/g, '') // keep letters/digits + a few tech chars
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 /**
- * Lowercases company name and strips common legal suffixes/punctuation.
+ * Normalizes a company name for deduplication: lowercases, strips legal suffixes,
+ * trademark symbols, a leading "the", and punctuation, then collapses spaces.
+ * Example: "The Acme Technologies, Inc.®" → "acme technologies".
  */
 export function normalizeCompany(company: string): string {
   return company
     .toLowerCase()
-    .trim()
-    .replace(/\b(ltd|limited|inc|pvt|llc|corp|corporation)\b\.?/gi, '')
-    .replace(/[.,]/g, '')
+    .replace(/[®™©]/g, ' ')
+    .replace(/^the\s+/i, '')
+    .replace(
+      /\b(ltd|limited|inc|incorporated|pvt|private|llc|llp|plc|corp|corporation|company|co|gmbh|ag|sa|bv|pte|oy|ltda|srl)\b\.?/gi,
+      ' ',
+    )
+    .replace(/[^a-z0-9 ]/g, ' ') // drop punctuation/dots/commas
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -54,6 +67,27 @@ export function normalizeCompany(company: string): string {
 export function normalizeSkill(skill: string): string {
   const key = skill.toLowerCase().trim();
   return SKILL_MAP[key] ?? skill.trim();
+}
+
+/**
+ * Strips HTML tags and decodes a few common entities into readable plain text.
+ * Used to clean provider descriptions that arrive as HTML (Jobicy, remote-jobs1).
+ */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<\/(p|div|li|h[1-6]|ul|ol|br)>/gi, '\n') // block endings → newlines
+    .replace(/<li[^>]*>/gi, '- ') // list items → bullets
+    .replace(/<[^>]+>/g, '') // remove all remaining tags
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&rsquo;|&lsquo;/gi, "'")
+    .replace(/&quot;|&ldquo;|&rdquo;/gi, '"')
+    .replace(/&hellip;/gi, '...')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n') // collapse excess blank lines
+    .trim();
 }
 
 /**
