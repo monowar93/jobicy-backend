@@ -47,6 +47,7 @@ function toEnumArray<T extends string>(
 
 export type JobSort = 'latest' | 'most_viewed' | 'salary_desc';
 export type DatePostedFilter = 'today' | 'week' | 'month';
+export type RegionFilter = 'bangladesh' | 'worldwide';
 
 export class JobQueryDto extends PaginationQueryDto {
   @IsOptional()
@@ -85,6 +86,12 @@ export class JobQueryDto extends PaginationQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   remoteOnly?: boolean;
+
+  // Region toggle: "bangladesh" → BD jobs (any work type); "worldwide" →
+  // jobs outside Bangladesh (which by ingestion policy are remote).
+  @IsOptional()
+  @IsIn(['bangladesh', 'worldwide'])
+  region?: RegionFilter;
 
   @IsOptional()
   @Type(() => Number)

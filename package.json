@@ -24,7 +24,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
-    "ingestion:run": "nest build && node -r dotenv/config dist/scripts/run-ingestion.js"
+    "ingestion:run": "nest build && node -r dotenv/config dist/scripts/run-ingestion.js",
+    "jobs:cleanup": "nest build && node -r dotenv/config dist/scripts/cleanup-jobs.js"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

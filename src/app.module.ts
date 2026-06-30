@@ -8,6 +8,7 @@ import { AuthModule } from '@/auth/auth.module';
 import { ApplicationsModule } from '@/applications/applications.module';
 import { IngestionModule } from '@/ingestion/ingestion.module';
 import { JobsModule } from '@/jobs/jobs.module';
+import { MaintenanceModule } from '@/maintenance/maintenance.module';
 import { RealtimeModule } from '@/realtime/realtime.module';
 import { SavedJobsModule } from '@/saved-jobs/saved-jobs.module';
 import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
@@ -40,6 +41,7 @@ void ALIAS_CHECK;
     JobsModule,
     RealtimeModule,
     IngestionModule,
+    MaintenanceModule,
   ],
   controllers: [AppController],
   providers: [

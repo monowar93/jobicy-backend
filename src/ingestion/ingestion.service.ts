@@ -1,8 +1,9 @@
 // Orchestrates fetch → normalize → dedup → upsert → cache bust → realtime emit.
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Job, FetchStatus } from '@/generated/prisma';
+import { Job, FetchStatus, LocationType } from '@/generated/prisma';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
+import { isBangladeshLocation } from '@/common/utils/normalize.util';
 import { toJobCardDto } from '@/jobs/jobs.mapper';
 import {
   INGESTIBLE_CATEGORIES,
@@ -166,6 +167,15 @@ export class IngestionService {
         continue;
       }
 
+      // Geography policy: keep ALL Bangladesh jobs (onsite/hybrid/remote) but
+      // only REMOTE jobs from outside Bangladesh (worldwide remote). Drop
+      // onsite/hybrid jobs located outside Bangladesh.
+      const isBangladesh = isBangladeshLocation(normalized.location);
+      if (!isBangladesh && normalized.locationType !== LocationType.REMOTE) {
+        continue;
+      }
+      normalized.isBangladesh = isBangladesh;
+
       if (seen.has(normalized.fingerprint)) {
         continue;
       }
@@ -202,6 +212,7 @@ export class IngestionService {
             lastSeenAt: now,
             fetchCount: { increment: 1 },
             isActive: true,
+            isBangladesh: job.isBangladesh ?? false,
           },
         });
       } else {
@@ -214,6 +225,7 @@ export class IngestionService {
             companyLogo: job.companyLogo,
             location: job.location,
             locationType: job.locationType,
+            isBangladesh: job.isBangladesh ?? false,
             jobType: job.jobType,
             category: job.category,
             skills: job.skills,

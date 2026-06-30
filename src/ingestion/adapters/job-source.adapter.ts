@@ -32,6 +32,11 @@ export interface NormalizedJobInput {
   companyLogo: string | null;
   location: string;
   locationType: LocationType;
+  /**
+   * Whether the job is located in Bangladesh. Set centrally by the ingestion
+   * service from the location string (adapters may leave it undefined).
+   */
+  isBangladesh?: boolean;
   jobType: JobType;
   category: JobCategory;
   skills: string[];

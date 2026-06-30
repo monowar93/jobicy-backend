@@ -38,6 +38,7 @@ export function toJobCardDto(
     companyLogo: job.companyLogo,
     location: job.location,
     locationType: job.locationType,
+    isBangladesh: job.isBangladesh,
     jobType: job.jobType,
     category: job.category,
     skills: job.skills,

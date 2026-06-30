@@ -7,6 +7,7 @@ model Job {
   companyLogo         String?
   location            String
   locationType        LocationType    @default(ONSITE)
+  isBangladesh        Boolean         @default(false)
   jobType             JobType         @default(FULL_TIME)
   category            JobCategory     @default(OTHER)
   skills              String[]
@@ -38,6 +39,8 @@ model Job {
   @@index([category])
   @@index([jobType])
   @@index([locationType])
+  @@index([isBangladesh])
+  @@index([lastSeenAt])
   @@index([source])
   @@index([company])
   @@index([viewCount])

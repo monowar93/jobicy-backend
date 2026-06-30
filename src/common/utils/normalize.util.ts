@@ -90,6 +90,40 @@ export function stripHtml(html: string): string {
     .trim();
 }
 
+/** Bangladesh place-name tokens used to detect a BD-based job location. */
+const BANGLADESH_TOKENS = [
+  'bangladesh',
+  'dhaka',
+  'chattogram',
+  'chittagong',
+  'sylhet',
+  'khulna',
+  'rajshahi',
+  'barisal',
+  'rangpur',
+  'mymensingh',
+  'narayanganj',
+  'gazipur',
+  'cumilla',
+  'comilla',
+];
+
+/**
+ * Returns true when a location string refers to Bangladesh.
+ * Used by ingestion to keep BD jobs (any work type) while only keeping remote
+ * jobs from elsewhere. Matches BD city/country names or the ISO code "bd".
+ */
+export function isBangladeshLocation(location: string): boolean {
+  const value = (location ?? '').toLowerCase();
+  if (!value) {
+    return false;
+  }
+  if (BANGLADESH_TOKENS.some((token) => value.includes(token))) {
+    return true;
+  }
+  return /\bbd\b/.test(value); // standalone "bd", not inside another word
+}
+
 /**
  * Classifies a job into a developer category from title + skills keywords.
  */

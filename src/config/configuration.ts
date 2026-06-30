@@ -49,6 +49,11 @@ export default () => ({
     timezone: process.env.INGESTION_TIMEZONE ?? 'Asia/Dhaka',
   },
 
+  jobs: {
+    // Jobs not seen by ingestion for this many days are purged (storage cap).
+    retentionDays: parseInt(process.env.JOB_RETENTION_DAYS ?? '30', 10),
+  },
+
   mail: {
     host: process.env.SMTP_HOST ?? '',
     port: parseInt(process.env.SMTP_PORT ?? '587', 10),

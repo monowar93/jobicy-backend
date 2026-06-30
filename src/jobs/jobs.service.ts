@@ -315,6 +315,14 @@ export class JobsService {
       where.locationType = LocationType.REMOTE;
     }
 
+    // Region toggle (Bangladesh vs Worldwide). Combine with locationType above
+    // to express e.g. "Bangladesh + Remote" or "Worldwide + Remote".
+    if (query.region === 'bangladesh') {
+      where.isBangladesh = true;
+    } else if (query.region === 'worldwide') {
+      where.isBangladesh = false;
+    }
+
     if (query.salaryMin !== undefined) {
       where.salaryMax = { gte: query.salaryMin };
     }

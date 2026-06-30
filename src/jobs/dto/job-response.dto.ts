@@ -15,6 +15,7 @@ export interface JobCardDto {
   companyLogo: string | null;
   location: string;
   locationType: LocationType;
+  isBangladesh: boolean;
   jobType: JobType;
   category: JobCategory;
   skills: string[];
