@@ -5,6 +5,9 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { WinstonModule } from 'nest-winston';
 import { ALIAS_CHECK } from '@/alias-check';
 import { AuthModule } from '@/auth/auth.module';
+import { ApplicationsModule } from '@/applications/applications.module';
+import { JobsModule } from '@/jobs/jobs.module';
+import { SavedJobsModule } from '@/saved-jobs/saved-jobs.module';
 import { GlobalExceptionFilter } from '@/common/filters/global-exception.filter';
 import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
@@ -30,6 +33,9 @@ void ALIAS_CHECK;
     PrismaModule,
     RedisModule,
     AuthModule,
+    SavedJobsModule,
+    ApplicationsModule,
+    JobsModule,
   ],
   controllers: [AppController],
   providers: [
