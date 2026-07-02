@@ -30,6 +30,8 @@ export interface NormalizedJobInput {
   title: string;
   company: string;
   companyLogo: string | null;
+  companyWebsite?: string | null;
+  companyLinkedIn?: string | null;
   location: string;
   locationType: LocationType;
   /**

@@ -19,6 +19,7 @@ export interface JobCardDto {
   jobType: JobType;
   category: JobCategory;
   skills: string[];
+  benefits: string[];
   salaryMin: number | null;
   salaryMax: number | null;
   salaryCurrency: SalaryCurrency | null;
@@ -26,6 +27,7 @@ export interface JobCardDto {
   experienceMin: number | null;
   experienceMax: number | null;
   source: JobSource;
+  sourceName: string | null;
   sourceUrl: string;
   postedAt: string;
   isActive: boolean;
@@ -42,6 +44,8 @@ export interface JobDetailDto extends JobCardDto {
   benefits: string[];
   sourceName: string | null;
   scrapedAt: string;
+  companyWebsite: string | null;
+  companyLinkedIn: string | null;
   marketInsight: {
     similarActiveCount: number;
     demandLabel: 'Low' | 'Medium' | 'High';

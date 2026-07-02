@@ -47,6 +47,8 @@ export interface FantasticJobsRawJob {
   ai_requirements_summary?: string | null;
   ai_benefits?: string[] | null;
   org_linkedin_description?: string | null;
+  organization_url?: string | null;
+  linkedin_org_url?: string | null;
 }
 
 /** Scales a salary period into a comparable yearly figure. */
@@ -104,6 +106,8 @@ export function normalizeFantasticJob(
     title,
     company,
     companyLogo: job.organization_logo ?? null,
+    companyWebsite: normalizeExternalUrl(job.organization_url),
+    companyLinkedIn: normalizeExternalUrl(job.linkedin_org_url),
     location: buildLocation(job),
     locationType: mapWorkArrangement(job.ai_work_arrangement),
     jobType: mapEmploymentType(job.ai_employment_type),
@@ -276,6 +280,21 @@ function buildDescription(job: FantasticJobsRawJob): string {
   }
 
   return sections.join('\n\n') || (job.title ?? '');
+}
+
+/** Returns a trimmed https URL or null when the value is missing/invalid. */
+function normalizeExternalUrl(value: string | null | undefined): string | null {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  if (trimmed.includes(' ') || !trimmed.includes('.')) {
+    return null;
+  }
+  return `https://${trimmed}`;
 }
 
 /** Safely parses an ISO date string, returning null on missing/invalid input. */

@@ -42,6 +42,7 @@ export function toJobCardDto(
     jobType: job.jobType,
     category: job.category,
     skills: job.skills,
+    benefits: job.benefits,
     salaryMin: job.salaryMin,
     salaryMax: job.salaryMax,
     salaryCurrency: job.salaryCurrency,
@@ -49,6 +50,7 @@ export function toJobCardDto(
     experienceMin: job.experienceMin,
     experienceMax: job.experienceMax,
     source: job.source,
+    sourceName: job.sourceName,
     sourceUrl: job.sourceUrl,
     postedAt: toIso(job.postedAt) ?? '',
     isActive: job.isActive,
@@ -74,6 +76,8 @@ export function toJobDetailDto(
     benefits: job.benefits,
     sourceName: job.sourceName,
     scrapedAt: toIso(job.scrapedAt) ?? '',
+    companyWebsite: job.companyWebsite ?? null,
+    companyLinkedIn: job.companyLinkedIn ?? null,
     marketInsight,
   };
 }

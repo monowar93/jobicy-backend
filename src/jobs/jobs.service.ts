@@ -1,7 +1,7 @@
 // Jobs business logic — query building, caching, view counts, similar/trending.
 import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { Job, LocationType, Prisma } from '@/generated/prisma';
+import { Job, JobCategory, LocationType, Prisma } from '@/generated/prisma';
 import { appError } from '@/common/constants/error-codes';
 import { buildMeta } from '@/common/utils/pagination.util';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -304,7 +304,15 @@ export class JobsService {
     }
 
     if (query.category?.length) {
-      where.category = { in: query.category };
+      // DevOps filter also returns QA roles (QA is hidden as its own filter option).
+      const categories = [...query.category];
+      if (
+        categories.includes(JobCategory.DEVOPS) &&
+        !categories.includes(JobCategory.QA)
+      ) {
+        categories.push(JobCategory.QA);
+      }
+      where.category = { in: categories };
     }
 
     if (query.locationType?.length) {

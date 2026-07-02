@@ -218,6 +218,8 @@ export class IngestionService {
             fetchCount: { increment: 1 },
             isActive: true,
             isBangladesh: job.isBangladesh ?? false,
+            ...(job.companyWebsite ? { companyWebsite: job.companyWebsite } : {}),
+            ...(job.companyLinkedIn ? { companyLinkedIn: job.companyLinkedIn } : {}),
           },
         });
       } else {
@@ -228,6 +230,8 @@ export class IngestionService {
             title: job.title,
             company: job.company,
             companyLogo: job.companyLogo,
+            companyWebsite: job.companyWebsite ?? null,
+            companyLinkedIn: job.companyLinkedIn ?? null,
             location: job.location,
             locationType: job.locationType,
             isBangladesh: job.isBangladesh ?? false,

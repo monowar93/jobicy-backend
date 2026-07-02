@@ -110,6 +110,8 @@ export class RemoteJobsAdapter implements JobSourceAdapter {
       title,
       company,
       companyLogo: null,
+      companyWebsite: this.resolveCompanyWebsite(job),
+      companyLinkedIn: null,
       location: this.buildLocation(job),
       locationType: this.mapLocationType(job.locationTypes),
       jobType: this.mapJobType(job.employmentTypes),
@@ -140,11 +142,20 @@ export class RemoteJobsAdapter implements JobSourceAdapter {
     return 'Unknown';
   }
 
-  private resolveSourceName(job: RemoteRawJob): string {
-    if (job.company && typeof job.company === 'object' && job.company.website) {
-      return job.company.website;
-    }
+  private resolveSourceName(_job: RemoteRawJob): string {
     return 'remote-jobs';
+  }
+
+  /** Reads the embedded company website when include_company=true. */
+  private resolveCompanyWebsite(job: RemoteRawJob): string | null {
+    if (job.company && typeof job.company === 'object' && job.company.website) {
+      const website = job.company.website.trim();
+      if (!website) {
+        return null;
+      }
+      return /^https?:\/\//i.test(website) ? website : `https://${website}`;
+    }
+    return null;
   }
 
   private extractSkills(skills: string[] | null | undefined): string[] {

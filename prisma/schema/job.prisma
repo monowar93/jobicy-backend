@@ -5,6 +5,8 @@ model Job {
   title               String
   company             String
   companyLogo         String?
+  companyWebsite      String?
+  companyLinkedIn     String?
   location            String
   locationType        LocationType    @default(ONSITE)
   isBangladesh        Boolean         @default(false)
