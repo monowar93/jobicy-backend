@@ -15,15 +15,13 @@ async function main(): Promise<void> {
   try {
     const aggregator = app.get(AnalyticsAggregatorService);
     await aggregator.runDailySnapshot();
-    // eslint-disable-next-line no-console -- CLI script output
-    console.log('Analytics snapshot complete');
+    process.stdout.write('Analytics snapshot complete\n');
   } finally {
     await app.close();
   }
 }
 
 void main().catch((err: unknown) => {
-  // eslint-disable-next-line no-console -- CLI script output
-  console.error('Analytics snapshot failed:', err);
+  process.stderr.write(`Analytics snapshot failed: ${String(err)}\n`);
   process.exit(1);
 });

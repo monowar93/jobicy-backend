@@ -16,15 +16,13 @@ async function main(): Promise<void> {
     const ingestion = app.get(IngestionService);
     const result = await ingestion.run();
 
-    // eslint-disable-next-line no-console -- CLI script output
-    console.log('Ingestion complete:', result);
+    process.stdout.write(`Ingestion complete: ${JSON.stringify(result)}\n`);
   } finally {
     await app.close();
   }
 }
 
 void main().catch((err: unknown) => {
-  // eslint-disable-next-line no-console -- CLI script output
-  console.error('Ingestion failed:', err);
+  process.stderr.write(`Ingestion failed: ${String(err)}\n`);
   process.exit(1);
 });

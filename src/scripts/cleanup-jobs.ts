@@ -17,15 +17,13 @@ async function main(): Promise<void> {
     const maintenance = app.get(MaintenanceService);
     const result = await maintenance.purgeOldJobs();
 
-    // eslint-disable-next-line no-console -- CLI script output
-    console.log('Cleanup complete:', result);
+    process.stdout.write(`Cleanup complete: ${JSON.stringify(result)}\n`);
   } finally {
     await app.close();
   }
 }
 
 void main().catch((err: unknown) => {
-  // eslint-disable-next-line no-console -- CLI script output
-  console.error('Cleanup failed:', err);
+  process.stderr.write(`Cleanup failed: ${String(err)}\n`);
   process.exit(1);
 });

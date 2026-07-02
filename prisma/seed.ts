@@ -232,12 +232,12 @@ async function seedJobs(): Promise<void> {
 async function main(): Promise<void> {
   await seedAdmin();
   await seedJobs();
-  console.log('Seed complete: admin user + sample jobs upserted.');
+  process.stdout.write('Seed complete: admin user + sample jobs upserted.\n');
 }
 
 main()
   .catch((err: unknown) => {
-    console.error('Seed failed:', err);
+    process.stderr.write(`Seed failed: ${String(err)}\n`);
     process.exit(1);
   })
   .finally(async () => {
