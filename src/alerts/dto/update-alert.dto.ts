@@ -3,12 +3,10 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
-  IsInt,
   IsOptional,
   IsString,
-  Min,
 } from 'class-validator';
-import { AlertFrequency, JobType } from '@/generated/prisma';
+import { AlertFrequency, JobType, LocationType } from '@/generated/prisma';
 
 export class UpdateAlertDto {
   @IsOptional()
@@ -30,9 +28,8 @@ export class UpdateAlertDto {
   jobType?: JobType;
 
   @IsOptional()
-  @IsInt()
-  @Min(0)
-  salaryMin?: number;
+  @IsEnum(LocationType)
+  locationType?: LocationType;
 
   @IsOptional()
   @IsEnum(AlertFrequency)

@@ -33,6 +33,7 @@ model Alert {
   skills     String[]
   location   String?
   jobType    JobType?
+  locationType LocationType?
   salaryMin  Int?
   frequency  AlertFrequency @default(INSTANT)
   isActive   Boolean        @default(true)

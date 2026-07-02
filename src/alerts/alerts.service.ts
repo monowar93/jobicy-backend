@@ -44,7 +44,7 @@ export class AlertsService {
         skills: dto.skills.map((s) => normalizeSkill(s)).filter(Boolean),
         location: dto.location?.trim() || null,
         jobType: dto.jobType ?? null,
-        salaryMin: dto.salaryMin ?? null,
+        locationType: dto.locationType ?? null,
         frequency: dto.frequency,
         isActive: dto.isActive ?? true,
       },
@@ -73,7 +73,9 @@ export class AlertsService {
           location: dto.location?.trim() || null,
         }),
         ...(dto.jobType !== undefined && { jobType: dto.jobType ?? null }),
-        ...(dto.salaryMin !== undefined && { salaryMin: dto.salaryMin ?? null }),
+        ...(dto.locationType !== undefined && {
+          locationType: dto.locationType ?? null,
+        }),
         ...(dto.frequency !== undefined && { frequency: dto.frequency }),
         ...(dto.isActive !== undefined && { isActive: dto.isActive }),
       },
@@ -222,13 +224,8 @@ export class AlertsService {
       and.push({ jobType: alert.jobType });
     }
 
-    if (alert.salaryMin !== null && alert.salaryMin !== undefined) {
-      and.push({
-        OR: [
-          { salaryMax: { gte: alert.salaryMin } },
-          { salaryMin: { gte: alert.salaryMin } },
-        ],
-      });
+    if (alert.locationType) {
+      and.push({ locationType: alert.locationType });
     }
 
     return { AND: and };
@@ -272,11 +269,8 @@ export class AlertsService {
       return false;
     }
 
-    if (alert.salaryMin !== null && alert.salaryMin !== undefined) {
-      const max = job.salaryMax ?? job.salaryMin;
-      if (max === null || max < alert.salaryMin) {
-        return false;
-      }
+    if (alert.locationType && job.locationType !== alert.locationType) {
+      return false;
     }
 
     return true;
@@ -300,7 +294,7 @@ export class AlertsService {
       skills: row.skills,
       location: row.location,
       jobType: row.jobType,
-      salaryMin: row.salaryMin,
+      locationType: row.locationType,
       frequency: row.frequency,
       isActive: row.isActive,
       createdAt: row.createdAt.toISOString(),

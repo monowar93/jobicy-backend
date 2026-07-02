@@ -1,5 +1,5 @@
 // Alert API response shape — mirrors 02-api-contracts.md §5.
-import { AlertFrequency, JobType } from '@/generated/prisma';
+import { AlertFrequency, JobType, LocationType } from '@/generated/prisma';
 
 export interface AlertDto {
   id: string;
@@ -7,7 +7,7 @@ export interface AlertDto {
   skills: string[];
   location: string | null;
   jobType: JobType | null;
-  salaryMin: number | null;
+  locationType: LocationType | null;
   frequency: AlertFrequency;
   isActive: boolean;
   createdAt: string;
