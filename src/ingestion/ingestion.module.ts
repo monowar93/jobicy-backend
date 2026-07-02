@@ -11,7 +11,9 @@ import { JobicyAdapter } from '@/ingestion/adapters/jobicy.adapter';
 import { IndeedAdapter } from '@/ingestion/adapters/indeed.adapter';
 import { RemoteJobsAdapter } from '@/ingestion/adapters/remote-jobs.adapter';
 import { GlassdoorAdapter } from '@/ingestion/adapters/glassdoor.adapter';
+import { JsearchApiAdapter } from '@/ingestion/adapters/jsearch-api.adapter';
 import { IngestionService } from '@/ingestion/ingestion.service';
+import { JobEnrichmentService } from '@/ingestion/job-enrichment.service';
 import { RealtimeModule } from '@/realtime/realtime.module';
 import { AlertsModule } from '@/alerts/alerts.module';
 
@@ -24,7 +26,9 @@ import { AlertsModule } from '@/alerts/alerts.module';
     IndeedAdapter,
     RemoteJobsAdapter,
     GlassdoorAdapter,
+    JsearchApiAdapter,
     IngestionService,
+    JobEnrichmentService,
     {
       provide: JOB_SOURCE_ADAPTERS,
       useFactory: (
@@ -34,6 +38,7 @@ import { AlertsModule } from '@/alerts/alerts.module';
         indeed: IndeedAdapter,
         remoteJobs: RemoteJobsAdapter,
         glassdoor: GlassdoorAdapter,
+        jsearchApi: JsearchApiAdapter,
       ): JobSourceAdapter[] => [
         jsearch,
         activeJobsDb,
@@ -41,6 +46,7 @@ import { AlertsModule } from '@/alerts/alerts.module';
         indeed,
         remoteJobs,
         glassdoor,
+        jsearchApi,
       ],
       inject: [
         JsearchAdapter,
@@ -49,6 +55,7 @@ import { AlertsModule } from '@/alerts/alerts.module';
         IndeedAdapter,
         RemoteJobsAdapter,
         GlassdoorAdapter,
+        JsearchApiAdapter,
       ],
     },
   ],

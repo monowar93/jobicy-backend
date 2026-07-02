@@ -49,6 +49,16 @@ export default () => ({
     timezone: process.env.INGESTION_TIMEZONE ?? 'Asia/Dhaka',
   },
 
+  // JSearch RapidAPI (jsearch.p.rapidapi.com) — /search + optional /job-details.
+  jsearchApi: {
+    host: process.env.JSEARCH_RAPIDAPI_HOST ?? 'jsearch.p.rapidapi.com',
+    fetchDetails: process.env.JSEARCH_RAPIDAPI_FETCH_DETAILS !== 'false',
+    maxDetailFetches: parseInt(
+      process.env.JSEARCH_RAPIDAPI_MAX_DETAIL_FETCHES ?? '10',
+      10,
+    ),
+  },
+
   jobs: {
     // Jobs not seen by ingestion for this many days are purged (storage cap).
     retentionDays: parseInt(process.env.JOB_RETENTION_DAYS ?? '30', 10),
@@ -72,6 +82,15 @@ export default () => ({
     adminName: process.env.SEED_ADMIN_NAME ?? 'Admin',
     adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@jobicy.app',
     adminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'Admin@12345',
+  },
+
+  // Optional Azure OpenAI — fills plain-language skill phrases when regex finds < 3 tags.
+  azureOpenAi: {
+    enabled: process.env.AZURE_OPENAI_ENABLED === 'true',
+    endpoint: process.env.AZURE_OPENAI_ENDPOINT ?? '',
+    apiKey: process.env.AZURE_OPENAI_API_KEY ?? '',
+    deployment: process.env.AZURE_OPENAI_DEPLOYMENT ?? '',
+    apiVersion: process.env.AZURE_OPENAI_API_VERSION ?? '2024-02-15-preview',
   },
 });
 

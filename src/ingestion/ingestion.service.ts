@@ -13,6 +13,7 @@ import {
 } from '@/ingestion/adapters/job-source.adapter';
 import { RealtimeService } from '@/realtime/realtime.service';
 import { AlertsService } from '@/alerts/alerts.service';
+import { JobEnrichmentService } from '@/ingestion/job-enrichment.service';
 
 /** Summary returned after a successful ingestion run. */
 export interface IngestionRunResult {
@@ -31,6 +32,7 @@ export class IngestionService {
     private readonly redis: RedisService,
     private readonly realtime: RealtimeService,
     private readonly alertsService: AlertsService,
+    private readonly jobEnrichment: JobEnrichmentService,
     @Inject(JOB_SOURCE_ADAPTERS)
     private readonly adapters: JobSourceAdapter[],
   ) {}
@@ -106,7 +108,7 @@ export class IngestionService {
 
     try {
       const rawJobs = await adapter.fetchJobs({});
-      const normalized = this.prepareNormalizedJobs(rawJobs, adapter);
+      const normalized = await this.prepareNormalizedJobs(rawJobs, adapter);
       const { jobsNew, jobsDuplicate, newJobs } =
         await this.upsertJobs(normalized);
 
@@ -153,10 +155,10 @@ export class IngestionService {
   /**
    * Normalize, filter non-developer roles, and dedupe within the batch by fingerprint.
    */
-  private prepareNormalizedJobs(
+  private async prepareNormalizedJobs(
     rawJobs: Record<string, unknown>[],
     adapter: JobSourceAdapter,
-  ): NormalizedJobInput[] {
+  ): Promise<NormalizedJobInput[]> {
     const seen = new Set<string>();
     const result: NormalizedJobInput[] = [];
 
@@ -166,6 +168,9 @@ export class IngestionService {
       if (!normalized.title || !normalized.sourceUrl) {
         continue;
       }
+
+      // Fill sparse skills / empty benefits from description (description text unchanged).
+      await this.jobEnrichment.enrich(normalized);
 
       // Drop non-developer postings (marketing, HR, etc.).
       if (!INGESTIBLE_CATEGORIES.has(normalized.category)) {
@@ -211,6 +216,15 @@ export class IngestionService {
 
       if (existing) {
         jobsDuplicate += 1;
+        const skillPatch =
+          job.skills.length > existing.skills.length
+            ? { skills: job.skills, category: job.category }
+            : {};
+        const benefitPatch =
+          existing.benefits.length === 0 && job.benefits.length > 0
+            ? { benefits: job.benefits }
+            : {};
+
         await this.prisma.job.update({
           where: { fingerprint: job.fingerprint },
           data: {
@@ -220,6 +234,8 @@ export class IngestionService {
             isBangladesh: job.isBangladesh ?? false,
             ...(job.companyWebsite ? { companyWebsite: job.companyWebsite } : {}),
             ...(job.companyLinkedIn ? { companyLinkedIn: job.companyLinkedIn } : {}),
+            ...skillPatch,
+            ...benefitPatch,
           },
         });
       } else {
