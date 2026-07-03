@@ -60,7 +60,7 @@ function toFetchLogDto(log: FetchLog): FetchLogDto {
 export class AdminService {
   private queueStatsCache: { data: QueueStatusDto[]; at: number } | null = null;
 
-  private static readonly QUEUE_STATS_TTL_MS = 20_000;
+  private static readonly QUEUE_STATS_TTL_MS = 120_000;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -112,7 +112,7 @@ export class AdminService {
     return { enqueued: true, jobId: String(job.id) };
   }
 
-  /** Live BullMQ job counts for every registered queue (cached ~20s). */
+  /** Live BullMQ job counts for every registered queue (cached ~2 min). */
   async queues(): Promise<QueueStatusDto[]> {
     const now = Date.now();
     if (

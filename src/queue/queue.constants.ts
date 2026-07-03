@@ -40,5 +40,6 @@ export const QUEUE_TIMEZONE = 'Asia/Dhaka';
  */
 export const WORKER_IDLE_OPTIONS = {
   concurrency: 1,
-  drainDelay: 30,
+  /** Seconds between idle polls — 120s cuts Redis usage vs default 5s (cron jobs tolerate ~2m delay). */
+  drainDelay: 120,
 } as const;
