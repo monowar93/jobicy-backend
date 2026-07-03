@@ -30,6 +30,7 @@ export class EmailService implements OnModuleInit {
   private readonly templates = new Map<string, Handlebars.TemplateDelegate>();
   private mailFrom = '';
   private frontendOrigin = '';
+  private appName = 'Joblens';
 
   constructor(private readonly config: ConfigService<AppConfig, true>) {}
 
@@ -38,6 +39,7 @@ export class EmailService implements OnModuleInit {
     const mail = this.config.get('mail', { infer: true });
     this.mailFrom = mail.from;
     this.frontendOrigin = this.config.get('frontendOrigin', { infer: true });
+    this.appName = this.config.get('appName', { infer: true });
 
     this.transport = nodemailer.createTransport({
       host: mail.host,
@@ -61,9 +63,9 @@ export class EmailService implements OnModuleInit {
   async sendVerifyEmail(to: string, link: string): Promise<void> {
     await this.send(
       to,
-      'Verify your Jobicy account',
+      `Verify your ${this.appName} account`,
       'verify-email',
-      { link, appName: 'Jobicy' },
+      { link, appName: this.appName },
     );
   }
 
@@ -71,9 +73,9 @@ export class EmailService implements OnModuleInit {
   async sendResetPassword(to: string, link: string): Promise<void> {
     await this.send(
       to,
-      'Reset your Jobicy password',
+      `Reset your ${this.appName} password`,
       'reset-password',
-      { link, appName: 'Jobicy' },
+      { link, appName: this.appName },
     );
   }
 
@@ -87,7 +89,7 @@ export class EmailService implements OnModuleInit {
       jobs,
       alert,
       manageUrl: `${this.frontendOrigin}/alerts`,
-      appName: 'Jobicy',
+      appName: this.appName,
     });
   }
 
@@ -97,7 +99,7 @@ export class EmailService implements OnModuleInit {
       to,
       `Your daily job digest (${jobs.length})`,
       'alert-daily',
-      { jobs, manageUrl: `${this.frontendOrigin}/alerts`, appName: 'Jobicy' },
+      { jobs, manageUrl: `${this.frontendOrigin}/alerts`, appName: this.appName },
     );
   }
 
@@ -107,7 +109,7 @@ export class EmailService implements OnModuleInit {
       to,
       `Your weekly job digest (${jobs.length})`,
       'alert-weekly',
-      { jobs, manageUrl: `${this.frontendOrigin}/alerts`, appName: 'Jobicy' },
+      { jobs, manageUrl: `${this.frontendOrigin}/alerts`, appName: this.appName },
     );
   }
 

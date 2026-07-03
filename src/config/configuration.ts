@@ -7,6 +7,8 @@ export default () => ({
   logLevel: process.env.LOG_LEVEL ?? 'debug',
   swaggerEnabled: process.env.SWAGGER_ENABLED === 'true',
 
+  appName: process.env.APP_NAME ?? 'Joblens',
+
   db: {
     url: process.env.DATABASE_URL ?? '',
   },
@@ -28,7 +30,7 @@ export default () => ({
   },
 
   cookie: {
-    name: process.env.REFRESH_COOKIE_NAME ?? 'jobicy_rt',
+    name: process.env.REFRESH_COOKIE_NAME ?? 'joblens_rt',
     secure: process.env.COOKIE_SECURE === 'true',
     sameSite: (process.env.COOKIE_SAMESITE ?? 'lax') as
       | 'lax'
@@ -70,7 +72,7 @@ export default () => ({
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER ?? '',
     pass: process.env.SMTP_PASS ?? '',
-    from: process.env.MAIL_FROM ?? 'Jobicy <no-reply@jobicy.app>',
+    from: process.env.MAIL_FROM ?? 'Joblens <no-reply@joblens.app>',
   },
 
   rateLimit: {
@@ -80,7 +82,7 @@ export default () => ({
 
   seed: {
     adminName: process.env.SEED_ADMIN_NAME ?? 'Admin',
-    adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@jobicy.app',
+    adminEmail: process.env.SEED_ADMIN_EMAIL ?? 'admin@joblens.app',
     adminPassword: process.env.SEED_ADMIN_PASSWORD ?? 'Admin@12345',
   },
 

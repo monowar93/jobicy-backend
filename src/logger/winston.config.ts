@@ -19,7 +19,7 @@ export function createWinstonLogger(
       ? winston.format.combine(
           winston.format.timestamp(),
           winston.format.colorize(),
-          nestWinstonUtilities.format.nestLike('Jobicy', { prettyPrint: true }),
+          nestWinstonUtilities.format.nestLike('Joblens', { prettyPrint: true }),
         )
       : winston.format.combine(
           winston.format.timestamp(),

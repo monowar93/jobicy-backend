@@ -1,4 +1,4 @@
-// Shared enums used across Jobicy models.
+// Shared enums used across Joblens models.
 enum Role {
   USER
   ADMIN

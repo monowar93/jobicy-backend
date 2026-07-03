@@ -37,7 +37,7 @@ function fingerprint(title: string, company: string): string {
 /** Read seed credentials from env (see claude.md §5). */
 function seedConfig() {
   const name = process.env.SEED_ADMIN_NAME ?? 'Admin';
-  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@jobicy.app';
+  const email = process.env.SEED_ADMIN_EMAIL ?? 'admin@joblens.app';
   const password = process.env.SEED_ADMIN_PASSWORD ?? 'Admin@12345';
   const rounds = Number(process.env.BCRYPT_SALT_ROUNDS ?? 12);
   return { name, email, password, rounds };
