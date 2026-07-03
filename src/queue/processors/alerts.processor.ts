@@ -6,9 +6,9 @@ import { AlertFrequency } from '@/generated/prisma';
 import { AlertsService } from '@/alerts/alerts.service';
 import { EmailService } from '@/email/email.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import { JOBS, QUEUES } from '@/queue/queue.constants';
+import { JOBS, QUEUES, WORKER_IDLE_OPTIONS } from '@/queue/queue.constants';
 
-@Processor(QUEUES.ALERTS)
+@Processor(QUEUES.ALERTS, WORKER_IDLE_OPTIONS)
 export class AlertsProcessor extends WorkerHost {
   private readonly logger = new Logger(AlertsProcessor.name);
 

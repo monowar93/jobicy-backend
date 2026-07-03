@@ -49,7 +49,7 @@ export class MaintenanceService {
     });
 
     if (deleted > 0) {
-      await this.redis.delByPattern('jobs:*');
+      await this.redis.invalidateCache('jobs');
     }
 
     this.logger.log(

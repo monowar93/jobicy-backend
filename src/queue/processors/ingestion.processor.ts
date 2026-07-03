@@ -3,9 +3,9 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { IngestionService } from '@/ingestion/ingestion.service';
-import { QUEUES } from '@/queue/queue.constants';
+import { QUEUES, WORKER_IDLE_OPTIONS } from '@/queue/queue.constants';
 
-@Processor(QUEUES.INGESTION)
+@Processor(QUEUES.INGESTION, WORKER_IDLE_OPTIONS)
 export class IngestionProcessor extends WorkerHost {
   private readonly logger = new Logger(IngestionProcessor.name);
 

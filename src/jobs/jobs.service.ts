@@ -40,7 +40,7 @@ export class JobsService {
     query: JobQueryDto,
     userId?: string,
   ): Promise<{ data: JobCardDto[]; meta: ReturnType<typeof buildMeta> }> {
-    const cacheKey = this.buildCacheKey('jobs', query);
+    const cacheKey = await this.versionedJobsKey(this.buildCacheKey('jobs', query));
 
     const cached = await this.redis.wrap<CachedJobList>(
       cacheKey,
@@ -81,7 +81,7 @@ export class JobsService {
    * Single job detail — increments viewCount, returns market insight + user flags.
    */
   async findOne(id: string, userId?: string): Promise<JobDetailDto> {
-    const cacheKey = `job:${id}`;
+    const cacheKey = await this.versionedJobsKey(`detail:${id}`);
 
     const cached = await this.redis.wrap<CachedJobBase>(
       cacheKey,
@@ -132,7 +132,9 @@ export class JobsService {
     limit: number,
     userId?: string,
   ): Promise<{ data: JobCardDto[]; meta: ReturnType<typeof buildMeta> }> {
-    const cacheKey = this.buildCacheKey('jobs:search', { q, page, limit });
+    const cacheKey = await this.versionedJobsKey(
+      this.buildCacheKey('jobs:search', { q, page, limit }),
+    );
 
     const cached = await this.redis.wrap<CachedJobList>(
       cacheKey,
@@ -404,6 +406,12 @@ export class JobsService {
       .digest('hex')
       .slice(0, 16);
     return `${prefix}:${hash}`;
+  }
+
+  /** Prefix a jobs cache key with the current invalidation generation. */
+  private async versionedJobsKey(suffix: string): Promise<string> {
+    const gen = await this.redis.getCacheGeneration('jobs');
+    return `jobs:v${gen}:${suffix}`;
   }
 
   /** Batch-fetch isSaved/isApplied sets for a list of job IDs. */

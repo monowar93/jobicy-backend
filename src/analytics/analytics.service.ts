@@ -34,7 +34,7 @@ export class AnalyticsService {
 
   /** Platform overview cards — live counts + latest snapshot demand index. */
   async getOverview(): Promise<OverviewDto> {
-    return this.redis.wrap('analytics:overview', TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics('overview', async () => {
       const todayStart = this.startOfDay(new Date());
       const monthStart = new Date(todayStart);
       monthStart.setDate(1);
@@ -81,9 +81,9 @@ export class AnalyticsService {
   async getSkillTrends(query: SkillsTrendQueryDto): Promise<SkillTrendsDto> {
     const range = query.range ?? '7d';
     const skills = (query.skills ?? []).slice(0, 5);
-    const cacheKey = `analytics:skills:${range}:${skills.join(',')}`;
+    const cacheKey = `skills:${range}:${skills.join(',')}`;
 
-    return this.redis.wrap(cacheKey, TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics(cacheKey, async () => {
       const days = range === '30d' ? 30 : 7;
       const since = new Date();
       since.setDate(since.getDate() - days);
@@ -117,9 +117,9 @@ export class AnalyticsService {
   /** Top hiring companies from the latest snapshot (live groupBy fallback). */
   async getCompanies(query: CompaniesQueryDto): Promise<CompanyStatDto[]> {
     const limit = query.limit ?? 10;
-    const cacheKey = `analytics:companies:${limit}`;
+    const cacheKey = `companies:${limit}`;
 
-    return this.redis.wrap(cacheKey, TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics(cacheKey, async () => {
       const latest = await this.prisma.analytics.findFirst({
         orderBy: { date: 'desc' },
       });
@@ -154,9 +154,9 @@ export class AnalyticsService {
   async getSalaries(query: SalariesQueryDto): Promise<SalaryByRoleDto[]> {
     const currency = query.currency ?? SalaryCurrency.BDT;
     const experience = query.experience;
-    const cacheKey = `analytics:salaries:${currency}:${experience ?? 'all'}`;
+    const cacheKey = `salaries:${currency}:${experience ?? 'all'}`;
 
-    return this.redis.wrap(cacheKey, TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics(cacheKey, async () => {
       const where = {
         isActive: true,
         salaryCurrency: currency,
@@ -215,7 +215,7 @@ export class AnalyticsService {
 
   /** Job counts by Bangladesh location with map coordinates. */
   async getLocations(): Promise<LocationStatDto[]> {
-    return this.redis.wrap('analytics:locations', TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics('locations', async () => {
       const latest = await this.prisma.analytics.findFirst({
         orderBy: { date: 'desc' },
       });
@@ -239,9 +239,9 @@ export class AnalyticsService {
   /** Daily job posting timeline with per-source breakdown. */
   async getTimeline(query: AnalyticsRangeQueryDto): Promise<TimelinePointDto[]> {
     const range = query.range ?? '7d';
-    const cacheKey = `analytics:timeline:${range}`;
+    const cacheKey = `timeline:${range}`;
 
-    return this.redis.wrap(cacheKey, TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics(cacheKey, async () => {
       const days = range === '30d' ? 30 : 7;
       const since = new Date();
       since.setDate(since.getDate() - days);
@@ -275,7 +275,7 @@ export class AnalyticsService {
 
   /** Demand index gauge with history and rising/declining skills. */
   async getDemandIndex(): Promise<DemandIndexDto> {
-    return this.redis.wrap('analytics:demand-index', TTL.ANALYTICS, async () => {
+    return this.wrapAnalytics('demand-index', async () => {
       const snapshots = await this.prisma.analytics.findMany({
         orderBy: { date: 'desc' },
         take: 14,
@@ -314,6 +314,14 @@ export class AnalyticsService {
 
       return { current, history, risingSkills, decliningSkills };
     });
+  }
+
+  private async wrapAnalytics<T>(
+    suffix: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    const gen = await this.redis.getCacheGeneration('analytics');
+    return this.redis.wrap(`analytics:v${gen}:${suffix}`, TTL.ANALYTICS, fn);
   }
 
   private topSkillsFromSnapshots(

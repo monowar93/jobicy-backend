@@ -11,9 +11,21 @@ export const TTL = {
   ANALYTICS: 3600,
 } as const;
 
+/** Logical cache groups invalidated via a generation counter (1 INCR vs SCAN+DEL). */
+export type CacheNamespace = 'jobs' | 'analytics';
+
+const CACHE_GEN_KEY: Record<CacheNamespace, string> = {
+  jobs: 'cache:gen:jobs',
+  analytics: 'cache:gen:analytics',
+};
+
+/** How long an in-process generation value is reused before re-reading Redis. */
+const GEN_MEMORY_TTL_MS = 5_000;
+
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
+  private readonly genMemory = new Map<CacheNamespace, { value: number; at: number }>();
 
   constructor(private readonly configService: ConfigService<AppConfig, true>) {
     this.client = this.createClient();
@@ -65,8 +77,33 @@ export class RedisService implements OnModuleDestroy {
   }
 
   /**
+   * Current cache generation for a namespace. Keys include `v{N}` so a bump
+   * invalidates all entries without SCAN+DEL (old keys expire via TTL).
+   */
+  async getCacheGeneration(namespace: CacheNamespace): Promise<number> {
+    const now = Date.now();
+    const cached = this.genMemory.get(namespace);
+    if (cached && now - cached.at < GEN_MEMORY_TTL_MS) {
+      return cached.value;
+    }
+
+    const raw = await this.client.get(CACHE_GEN_KEY[namespace]);
+    const value = raw ? parseInt(raw, 10) : 0;
+    this.genMemory.set(namespace, { value, at: now });
+    return value;
+  }
+
+  /** Bump generation — O(1) invalidation for every versioned key in the namespace. */
+  async invalidateCache(namespace: CacheNamespace): Promise<number> {
+    const value = await this.client.incr(CACHE_GEN_KEY[namespace]);
+    this.genMemory.set(namespace, { value, at: Date.now() });
+    return value;
+  }
+
+  /**
    * Delete all keys matching a glob pattern (e.g. 'jobs:*').
    * Uses SCAN to avoid blocking Redis on large keyspaces.
+   * Prefer {@link invalidateCache} for jobs/analytics namespaces.
    */
   async delByPattern(pattern: string): Promise<number> {
     let cursor = '0';

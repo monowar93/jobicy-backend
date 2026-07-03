@@ -58,6 +58,10 @@ function toFetchLogDto(log: FetchLog): FetchLogDto {
 
 @Injectable()
 export class AdminService {
+  private queueStatsCache: { data: QueueStatusDto[]; at: number } | null = null;
+
+  private static readonly QUEUE_STATS_TTL_MS = 20_000;
+
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue(QUEUES.INGESTION) private readonly ingestionQueue: Queue,
@@ -108,8 +112,16 @@ export class AdminService {
     return { enqueued: true, jobId: String(job.id) };
   }
 
-  /** Live BullMQ job counts for every registered queue. */
+  /** Live BullMQ job counts for every registered queue (cached ~20s). */
   async queues(): Promise<QueueStatusDto[]> {
+    const now = Date.now();
+    if (
+      this.queueStatsCache &&
+      now - this.queueStatsCache.at < AdminService.QUEUE_STATS_TTL_MS
+    ) {
+      return this.queueStatsCache.data;
+    }
+
     const entries: { name: string; queue: Queue }[] = [
       { name: QUEUES.INGESTION, queue: this.ingestionQueue },
       { name: QUEUES.ALERTS, queue: this.alertsQueue },
@@ -134,7 +146,10 @@ export class AdminService {
           failed: counts.failed ?? 0,
         };
       }),
-    );
+    ).then((data) => {
+      this.queueStatsCache = { data, at: Date.now() };
+      return data;
+    });
   }
 
   /** Paginated user list (safe shape — no passwords). */

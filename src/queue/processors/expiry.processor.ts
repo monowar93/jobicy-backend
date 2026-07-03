@@ -5,9 +5,9 @@ import { Job } from 'bullmq';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
 import { MaintenanceService } from '@/maintenance/maintenance.service';
-import { QUEUES } from '@/queue/queue.constants';
+import { QUEUES, WORKER_IDLE_OPTIONS } from '@/queue/queue.constants';
 
-@Processor(QUEUES.EXPIRY)
+@Processor(QUEUES.EXPIRY, WORKER_IDLE_OPTIONS)
 export class ExpiryProcessor extends WorkerHost {
   private readonly logger = new Logger(ExpiryProcessor.name);
 
@@ -29,7 +29,7 @@ export class ExpiryProcessor extends WorkerHost {
     });
 
     if (deactivated > 0) {
-      await this.redis.delByPattern('jobs:*');
+      await this.redis.invalidateCache('jobs');
     }
 
     this.logger.log(`Deactivated ${deactivated} stale job(s)`);

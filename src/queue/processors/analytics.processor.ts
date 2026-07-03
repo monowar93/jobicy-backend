@@ -3,9 +3,9 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { AnalyticsAggregatorService } from '@/analytics/analytics-aggregator.service';
-import { QUEUES } from '@/queue/queue.constants';
+import { QUEUES, WORKER_IDLE_OPTIONS } from '@/queue/queue.constants';
 
-@Processor(QUEUES.ANALYTICS)
+@Processor(QUEUES.ANALYTICS, WORKER_IDLE_OPTIONS)
 export class AnalyticsProcessor extends WorkerHost {
   private readonly logger = new Logger(AnalyticsProcessor.name);
 

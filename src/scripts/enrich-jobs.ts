@@ -82,7 +82,7 @@ async function main(): Promise<void> {
     }
 
     if (updated > 0) {
-      await redis.delByPattern('jobs:*');
+      await redis.invalidateCache('jobs');
     }
 
     process.stdout.write(

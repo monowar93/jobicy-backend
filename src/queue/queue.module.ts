@@ -22,16 +22,26 @@ import { ExpiryProcessor } from '@/queue/processors/expiry.processor';
       useFactory: (config: ConfigService<AppConfig, true>) => {
         const redis = config.get('redis', { infer: true });
         if (redis.url) {
-          return { connection: { url: redis.url } };
-        }
         return {
-          connection: {
-            host: redis.host,
-            port: redis.port,
-            password: redis.password,
-            ...(redis.tls ? { tls: {} } : {}),
+          connection: { url: redis.url },
+          defaultJobOptions: {
+            removeOnComplete: { count: 50 },
+            removeOnFail: { count: 20 },
           },
         };
+      }
+      return {
+        connection: {
+          host: redis.host,
+          port: redis.port,
+          password: redis.password,
+          ...(redis.tls ? { tls: {} } : {}),
+        },
+        defaultJobOptions: {
+          removeOnComplete: { count: 50 },
+          removeOnFail: { count: 20 },
+        },
+      };
       },
     }),
     BullModule.registerQueue(

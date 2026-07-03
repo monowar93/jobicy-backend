@@ -33,3 +33,12 @@ export const CRON = {
 } as const;
 
 export const QUEUE_TIMEZONE = 'Asia/Dhaka';
+
+/**
+ * Shared BullMQ worker tuning — longer idle poll interval cuts Redis commands
+ * when queues are empty (default drainDelay is 5 seconds).
+ */
+export const WORKER_IDLE_OPTIONS = {
+  concurrency: 1,
+  drainDelay: 30,
+} as const;

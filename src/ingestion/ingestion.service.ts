@@ -66,8 +66,8 @@ export class IngestionService {
     }
 
     // Bust job list/detail caches after any ingestion activity.
-    const deletedKeys = await this.redis.delByPattern('jobs:*');
-    this.logger.log(`Invalidated ${deletedKeys} jobs:* cache keys`);
+    const generation = await this.redis.invalidateCache('jobs');
+    this.logger.log(`Invalidated jobs cache (generation ${generation})`);
 
     if (allNewJobs.length > 0) {
       const cards = allNewJobs.map((job) => toJobCardDto(job));

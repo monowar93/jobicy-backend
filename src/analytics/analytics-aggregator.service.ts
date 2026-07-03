@@ -116,7 +116,7 @@ export class AnalyticsAggregatorService {
       },
     });
 
-    await this.redis.delByPattern('analytics:*');
+    await this.redis.invalidateCache('analytics');
     this.logger.log(
       `Analytics snapshot saved date=${todayStart.toISOString()} demandIndex=${demandIndex}`,
     );
