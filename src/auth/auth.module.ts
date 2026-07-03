@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from '@/auth/auth.controller';
 import { AuthService } from '@/auth/auth.service';
+import { AdminBootstrapService } from '@/auth/admin-bootstrap.service';
 import { TokenService } from '@/auth/token.service';
 import { JwtStrategy } from '@/auth/strategies/jwt.strategy';
 import { EmailModule } from '@/email/email.module';
@@ -25,7 +26,7 @@ import { AppConfig } from '@/config/configuration';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, JwtStrategy],
+  providers: [AuthService, TokenService, JwtStrategy, AdminBootstrapService],
   exports: [TokenService],
 })
 export class AuthModule {}

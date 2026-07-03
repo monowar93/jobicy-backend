@@ -22,15 +22,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio",
     "ingestion:run": "nest build && node -r dotenv/config dist/scripts/run-ingestion.js",
     "jobs:cleanup": "nest build && node -r dotenv/config dist/scripts/cleanup-jobs.js",
     "analytics:snapshot": "nest build && node -r dotenv/config dist/scripts/run-analytics.js",
     "jobs:enrich": "nest build && node -r dotenv/config dist/scripts/enrich-jobs.js"
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",
