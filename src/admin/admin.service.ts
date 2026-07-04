@@ -25,6 +25,8 @@ export interface FetchLogDto {
   jobsFetched: number;
   jobsNew: number;
   jobsDuplicate: number;
+  /** Raw API rows that were filtered (non-dev, geo policy) or dropped before upsert. */
+  jobsSkipped: number;
   errors: string[];
   startedAt: string;
   finishedAt: string | null;
@@ -42,6 +44,10 @@ export interface QueueStatusDto {
 
 /** Maps a Prisma FetchLog row to the public API shape. */
 function toFetchLogDto(log: FetchLog): FetchLogDto {
+  const jobsSkipped = Math.max(
+    0,
+    log.jobsFetched - log.jobsNew - log.jobsDuplicate,
+  );
   return {
     id: log.id,
     source: log.source,
@@ -49,6 +55,7 @@ function toFetchLogDto(log: FetchLog): FetchLogDto {
     jobsFetched: log.jobsFetched,
     jobsNew: log.jobsNew,
     jobsDuplicate: log.jobsDuplicate,
+    jobsSkipped,
     errors: log.errors,
     startedAt: log.startedAt.toISOString(),
     finishedAt: log.finishedAt?.toISOString() ?? null,
@@ -104,6 +111,13 @@ export class AdminService {
 
   /** Enqueue a one-off ingestion run (processed by IngestionProcessor). */
   async triggerFetch(): Promise<{ enqueued: true; jobId: string }> {
+    const counts = await this.ingestionQueue.getJobCounts('active', 'waiting');
+    const inFlight = (counts.active ?? 0) + (counts.waiting ?? 0);
+    if (inFlight > 0) {
+      const existing = await this.ingestionQueue.getJobs(['active', 'waiting'], 0, 1);
+      return { enqueued: true, jobId: String(existing[0]?.id ?? 'in-progress') };
+    }
+
     const job = await this.ingestionQueue.add(JOBS.INGESTION_RUN, {}, {
       removeOnComplete: 50,
       removeOnFail: 20,

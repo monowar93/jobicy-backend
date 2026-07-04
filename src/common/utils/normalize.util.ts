@@ -145,7 +145,7 @@ export function classifyCategory(
   if (/front[\s-]?end|frontend/.test(haystack)) {
     return JobCategory.FRONTEND;
   }
-  if (/software engineer/.test(haystack)) {
+  if (/software engineer|software developer/.test(haystack)) {
     return JobCategory.SOFTWARE_ENGINEER;
   }
   if (/mobile|android|ios|flutter|react native/.test(haystack)) {
@@ -156,6 +156,11 @@ export function classifyCategory(
   }
   if (/\bqa\b|quality assurance|test engineer/.test(haystack)) {
     return JobCategory.QA;
+  }
+  // Generic developer/engineer titles (e.g. "Java Developer", "Web Engineer").
+  // Checked last so DevOps/QA/Mobile stay precise; drops only clearly non-dev roles.
+  if (/\b(developer|engineer|programmer)\b/.test(haystack)) {
+    return JobCategory.SOFTWARE_ENGINEER;
   }
 
   return JobCategory.OTHER;

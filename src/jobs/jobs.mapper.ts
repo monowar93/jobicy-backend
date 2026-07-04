@@ -8,6 +8,7 @@ type JobLike = Omit<
   'postedAt' | 'applicationDeadline' | 'scrapedAt' | 'lastSeenAt' | 'updatedAt'
 > & {
   postedAt: Date | string;
+  lastSeenAt?: Date | string | null;
   applicationDeadline?: Date | string | null;
   scrapedAt?: Date | string;
 };
@@ -53,6 +54,7 @@ export function toJobCardDto(
     sourceName: job.sourceName,
     sourceUrl: job.sourceUrl,
     postedAt: toIso(job.postedAt) ?? '',
+    lastSeenAt: toIso(job.lastSeenAt ?? job.scrapedAt) ?? '',
     isActive: job.isActive,
     applicationDeadline: toIso(job.applicationDeadline),
     viewCount: job.viewCount,

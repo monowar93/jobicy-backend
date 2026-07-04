@@ -30,6 +30,8 @@ export interface JobCardDto {
   sourceName: string | null;
   sourceUrl: string;
   postedAt: string;
+  /** When this job was last confirmed active by ingestion (updates every fetch). */
+  lastSeenAt: string;
   isActive: boolean;
   applicationDeadline: string | null;
   viewCount: number;

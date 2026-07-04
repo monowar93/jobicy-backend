@@ -40,13 +40,13 @@ export class JobsService {
     query: JobQueryDto,
     userId?: string,
   ): Promise<{ data: JobCardDto[]; meta: ReturnType<typeof buildMeta> }> {
+    const where = this.buildWhere(query);
     const cacheKey = await this.versionedJobsKey(this.buildCacheKey('jobs', query));
 
     const cached = await this.redis.wrap<CachedJobList>(
       cacheKey,
       TTL.JOBS,
       async () => {
-        const where = this.buildWhere(query);
         const orderBy = this.buildOrderBy(query.sort ?? 'latest');
         const skip = (query.page - 1) * query.limit;
 
@@ -58,6 +58,10 @@ export class JobsService {
         return { jobs, total };
       },
     );
+
+    // Always use a live count so meta.total matches analytics/socket totals even
+    // when list rows are still served from a slightly older cache entry.
+    const total = await this.prisma.job.count({ where });
 
     const flags = await this.getUserFlags(
       userId,
@@ -73,7 +77,7 @@ export class JobsService {
 
     return {
       data,
-      meta: buildMeta(cached.total, query.page, query.limit),
+      meta: buildMeta(total, query.page, query.limit),
     };
   }
 
@@ -376,7 +380,8 @@ export class JobsService {
         ];
       case 'latest':
       default:
-        return [{ postedAt: 'desc' }];
+        // lastSeenAt = last ingestion run that confirmed the job — surfaces re-fetched roles first.
+        return [{ lastSeenAt: 'desc' }, { postedAt: 'desc' }];
     }
   }
 

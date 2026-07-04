@@ -46,7 +46,11 @@ export class IngestionService {
     let totalNew = 0;
     let totalDuplicate = 0;
     const allNewJobs: Job[] = [];
+    const allTouchedJobs: Job[] = [];
     const runStarted = Date.now();
+
+    // Runs left RUNNING after a crash/redeploy never finished — mark them failed.
+    await this.finalizeStaleRunningLogs();
 
     // Run every source independently — one provider failing must not block the rest.
     for (const adapter of this.adapters) {
@@ -56,6 +60,7 @@ export class IngestionService {
         totalNew += adapterResult.jobsNew;
         totalDuplicate += adapterResult.jobsDuplicate;
         allNewJobs.push(...adapterResult.newJobs);
+        allTouchedJobs.push(...adapterResult.touchedJobs);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         this.logger.error(
@@ -69,17 +74,25 @@ export class IngestionService {
     const generation = await this.redis.invalidateCache('jobs');
     this.logger.log(`Invalidated jobs cache (generation ${generation})`);
 
-    if (allNewJobs.length > 0) {
-      const cards = allNewJobs.map((job) => toJobCardDto(job));
+    // Push the most recently ingested jobs (new + re-verified) so the UI refreshes instantly.
+    if (allTouchedJobs.length > 0) {
+      const cards = allTouchedJobs
+        .sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime())
+        .slice(0, 10)
+        .map((job) => toJobCardDto(job));
       this.realtime.emitNewJobs(cards);
-      const stats = await this.computeLiveStats();
-      this.realtime.emitStats(stats);
+    }
 
+    if (allNewJobs.length > 0) {
       // Instant alert emails for each newly ingested job.
       for (const job of allNewJobs) {
         await this.alertsService.matchJobToAlerts(job);
       }
     }
+
+    // Always push live totals so the home-page counter matches the DB after every run.
+    const stats = await this.computeLiveStats();
+    this.realtime.emitStats(stats);
 
     return {
       jobsFetched: totalFetched,
@@ -97,6 +110,7 @@ export class IngestionService {
     jobsNew: number;
     jobsDuplicate: number;
     newJobs: Job[];
+    touchedJobs: Job[];
   }> {
     const startedAt = Date.now();
     const fetchLog = await this.prisma.fetchLog.create({
@@ -109,8 +123,12 @@ export class IngestionService {
     try {
       const rawJobs = await adapter.fetchJobs({});
       const normalized = await this.prepareNormalizedJobs(rawJobs, adapter);
-      const { jobsNew, jobsDuplicate, newJobs } =
+      const { jobsNew, jobsDuplicate, newJobs, touchedJobs } =
         await this.upsertJobs(normalized);
+      const jobsSkipped = Math.max(
+        0,
+        rawJobs.length - jobsNew - jobsDuplicate,
+      );
 
       await this.prisma.fetchLog.update({
         where: { id: fetchLog.id },
@@ -125,7 +143,7 @@ export class IngestionService {
       });
 
       this.logger.log(
-        `Ingestion [${adapter.source}]: fetched=${rawJobs.length} new=${jobsNew} dup=${jobsDuplicate}`,
+        `Ingestion [${adapter.source}]: fetched=${rawJobs.length} new=${jobsNew} dup=${jobsDuplicate} skipped=${jobsSkipped}`,
       );
 
       return {
@@ -133,6 +151,7 @@ export class IngestionService {
         jobsNew,
         jobsDuplicate,
         newJobs,
+        touchedJobs,
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -203,10 +222,12 @@ export class IngestionService {
     jobsNew: number;
     jobsDuplicate: number;
     newJobs: Job[];
+    touchedJobs: Job[];
   }> {
     let jobsNew = 0;
     let jobsDuplicate = 0;
     const newJobs: Job[] = [];
+    const touchedJobs: Job[] = [];
     const now = new Date();
 
     for (const job of jobs) {
@@ -224,8 +245,12 @@ export class IngestionService {
           existing.benefits.length === 0 && job.benefits.length > 0
             ? { benefits: job.benefits }
             : {};
+        const postedAtPatch =
+          job.postedAt.getTime() > existing.postedAt.getTime()
+            ? { postedAt: job.postedAt }
+            : {};
 
-        await this.prisma.job.update({
+        const updated = await this.prisma.job.update({
           where: { fingerprint: job.fingerprint },
           data: {
             lastSeenAt: now,
@@ -236,8 +261,10 @@ export class IngestionService {
             ...(job.companyLinkedIn ? { companyLinkedIn: job.companyLinkedIn } : {}),
             ...skillPatch,
             ...benefitPatch,
+            ...postedAtPatch,
           },
         });
+        touchedJobs.push(updated);
       } else {
         jobsNew += 1;
         const created = await this.prisma.job.create({
@@ -273,10 +300,34 @@ export class IngestionService {
           },
         });
         newJobs.push(created);
+        touchedJobs.push(created);
       }
     }
 
-    return { jobsNew, jobsDuplicate, newJobs };
+    return { jobsNew, jobsDuplicate, newJobs, touchedJobs };
+  }
+
+  /**
+   * Marks ingestion rows stuck in RUNNING (worker crash, deploy, timeout) as FAILED
+   * so the admin panel does not show phantom in-progress fetches forever.
+   */
+  private async finalizeStaleRunningLogs(): Promise<void> {
+    const staleBefore = new Date(Date.now() - 20 * 60 * 1000);
+    const result = await this.prisma.fetchLog.updateMany({
+      where: {
+        status: FetchStatus.RUNNING,
+        startedAt: { lt: staleBefore },
+      },
+      data: {
+        status: FetchStatus.FAILED,
+        finishedAt: new Date(),
+        errors: ['Run did not finish (server restart, timeout, or worker crash)'],
+      },
+    });
+
+    if (result.count > 0) {
+      this.logger.warn(`Finalized ${result.count} stale RUNNING fetch log(s)`);
+    }
   }
 
   /** Counts active jobs and jobs scraped today for stats:update socket event. */
