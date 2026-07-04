@@ -1,4 +1,5 @@
 // Swappable job-source contract — ingestion depends only on this interface.
+import { LISTABLE_JOB_CATEGORIES } from '@/common/constants/job-list.constants';
 import {
   JobCategory,
   JobSource,
@@ -66,12 +67,6 @@ export interface JobSourceAdapter {
 }
 
 /** Developer categories we ingest — OTHER rows are dropped after normalize. */
-export const INGESTIBLE_CATEGORIES: ReadonlySet<JobCategory> = new Set([
-  JobCategory.FULLSTACK,
-  JobCategory.BACKEND,
-  JobCategory.FRONTEND,
-  JobCategory.SOFTWARE_ENGINEER,
-  JobCategory.MOBILE,
-  JobCategory.DEVOPS,
-  JobCategory.QA,
-]);
+export const INGESTIBLE_CATEGORIES: ReadonlySet<JobCategory> = new Set(
+  LISTABLE_JOB_CATEGORIES,
+);

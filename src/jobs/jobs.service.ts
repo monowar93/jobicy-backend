@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { Job, JobCategory, LocationType, Prisma } from '@/generated/prisma';
 import { appError } from '@/common/constants/error-codes';
+import { listableJobsWhere } from '@/common/constants/job-list.constants';
 import { buildMeta } from '@/common/utils/pagination.util';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService, TTL } from '@/redis/redis.service';
@@ -41,34 +42,21 @@ export class JobsService {
     userId?: string,
   ): Promise<{ data: JobCardDto[]; meta: ReturnType<typeof buildMeta> }> {
     const where = this.buildWhere(query);
-    const cacheKey = await this.versionedJobsKey(this.buildCacheKey('jobs', query));
+    const orderBy = this.buildOrderBy(query.sort ?? 'latest');
+    const skip = (query.page - 1) * query.limit;
 
-    const cached = await this.redis.wrap<CachedJobList>(
-      cacheKey,
-      TTL.JOBS,
-      async () => {
-        const orderBy = this.buildOrderBy(query.sort ?? 'latest');
-        const skip = (query.page - 1) * query.limit;
-
-        const [jobs, total] = await Promise.all([
-          this.prisma.job.findMany({ where, orderBy, skip, take: query.limit }),
-          this.prisma.job.count({ where }),
-        ]);
-
-        return { jobs, total };
-      },
-    );
-
-    // Always use a live count so meta.total matches analytics/socket totals even
-    // when list rows are still served from a slightly older cache entry.
-    const total = await this.prisma.job.count({ where });
+    // Always read from DB — list must reflect fresh lastSeenAt/sort right after ingestion.
+    const [jobs, total] = await Promise.all([
+      this.prisma.job.findMany({ where, orderBy, skip, take: query.limit }),
+      this.prisma.job.count({ where }),
+    ]);
 
     const flags = await this.getUserFlags(
       userId,
-      cached.jobs.map((j) => j.id),
+      jobs.map((j) => j.id),
     );
 
-    const data = cached.jobs.map((job) =>
+    const data = jobs.map((job) =>
       toJobCardDto(job, {
         isSaved: flags.saved.has(job.id),
         isApplied: flags.applied.has(job.id),
@@ -145,7 +133,7 @@ export class JobsService {
       TTL.JOBS,
       async () => {
         const where: Prisma.JobWhereInput = {
-          isActive: true,
+          ...listableJobsWhere(),
           OR: [
             { title: { contains: q, mode: 'insensitive' } },
             { company: { contains: q, mode: 'insensitive' } },
@@ -287,7 +275,7 @@ export class JobsService {
 
   /** Build Prisma where clause from filter DTO. */
   private buildWhere(query: JobQueryDto): Prisma.JobWhereInput {
-    const where: Prisma.JobWhereInput = { isActive: true };
+    const where: Prisma.JobWhereInput = listableJobsWhere();
 
     if (query.q) {
       where.OR = [
@@ -362,7 +350,17 @@ export class JobsService {
     }
 
     if (query.datePosted) {
-      where.postedAt = { gte: this.datePostedCutoff(query.datePosted) };
+      const cutoff = this.datePostedCutoff(query.datePosted);
+      // Include re-fetched jobs (lastSeenAt) as well as newly posted roles (postedAt).
+      where.AND = [
+        ...(Array.isArray(where.AND) ? where.AND : []),
+        {
+          OR: [
+            { lastSeenAt: { gte: cutoff } },
+            { postedAt: { gte: cutoff } },
+          ],
+        },
+      ];
     }
 
     return where;

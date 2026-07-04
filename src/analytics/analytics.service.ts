@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { SalaryCurrency } from '@/generated/prisma';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService, TTL } from '@/redis/redis.service';
+import { listableJobsWhere } from '@/common/constants/job-list.constants';
 import {
   CompaniesQueryDto,
   SalariesQueryDto,
@@ -32,19 +33,21 @@ export class AnalyticsService {
     private readonly redis: RedisService,
   ) {}
 
-  /** Platform overview cards — live counts + latest snapshot demand index. */
+  /** Platform overview cards — live job counts + cached snapshot fields (demand index, etc.). */
   async getOverview(): Promise<OverviewDto> {
-    return this.wrapAnalytics('overview', async () => {
-      const todayStart = this.startOfDay(new Date());
-      const monthStart = new Date(todayStart);
-      monthStart.setDate(1);
+    const todayStart = this.startOfDay(new Date());
 
-      const [totalActiveJobs, newJobsToday, companiesHiringThisMonth, latest, yesterday] =
-        await Promise.all([
-          this.prisma.job.count({ where: { isActive: true } }),
-          this.prisma.job.count({
-            where: { scrapedAt: { gte: todayStart } },
-          }),
+    // Job totals must always be live so home counter matches GET /jobs meta.total.
+    const [totalActiveJobs, newJobsToday, snapshot] = await Promise.all([
+      this.prisma.job.count({ where: listableJobsWhere() }),
+      this.prisma.job.count({
+        where: { scrapedAt: { gte: todayStart } },
+      }),
+      this.wrapAnalytics('overview-snapshot', async () => {
+        const monthStart = new Date(todayStart);
+        monthStart.setDate(1);
+
+        const [companiesHiringThisMonth, latest, yesterday] = await Promise.all([
           this.prisma.job.groupBy({
             by: ['company'],
             where: { postedAt: { gte: monthStart }, isActive: true },
@@ -56,25 +59,31 @@ export class AnalyticsService {
           }),
         ]);
 
-      const salaryStats = (latest?.salaryStats as unknown as SalaryStatsSnapshot | null) ?? {
-        average: 0,
-        median: 0,
-        byRole: [],
-      };
+        const salaryStats =
+          (latest?.salaryStats as unknown as SalaryStatsSnapshot | null) ?? {
+            average: 0,
+            median: 0,
+            byRole: [],
+          };
 
-      const demandIndex = latest?.demandIndex ?? 0;
-      const priorDemand = yesterday?.demandIndex ?? demandIndex;
-      const demandTrend = Math.round((demandIndex - priorDemand) * 10) / 10;
+        const demandIndex = latest?.demandIndex ?? 0;
+        const priorDemand = yesterday?.demandIndex ?? demandIndex;
+        const demandTrend = Math.round((demandIndex - priorDemand) * 10) / 10;
 
-      return {
-        totalActiveJobs,
-        newJobsToday,
-        companiesHiringThisMonth,
-        averageSalaryBdt: salaryStats.average,
-        demandIndex,
-        demandTrend,
-      };
-    });
+        return {
+          companiesHiringThisMonth,
+          averageSalaryBdt: salaryStats.average,
+          demandIndex,
+          demandTrend,
+        };
+      }),
+    ]);
+
+    return {
+      totalActiveJobs,
+      newJobsToday,
+      ...snapshot,
+    };
   }
 
   /** Per-skill time series built from daily snapshots over the requested range. */

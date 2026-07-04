@@ -30,6 +30,7 @@ export class ExpiryProcessor extends WorkerHost {
 
     if (deactivated > 0) {
       await this.redis.invalidateCache('jobs');
+      await this.redis.invalidateCache('analytics');
     }
 
     this.logger.log(`Deactivated ${deactivated} stale job(s)`);

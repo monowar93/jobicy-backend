@@ -3,6 +3,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Job, FetchStatus, LocationType } from '@/generated/prisma';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RedisService } from '@/redis/redis.service';
+import { listableJobsWhere } from '@/common/constants/job-list.constants';
 import { isBangladeshLocation } from '@/common/utils/normalize.util';
 import { toJobCardDto } from '@/jobs/jobs.mapper';
 import {
@@ -70,9 +71,12 @@ export class IngestionService {
       }
     }
 
-    // Bust job list/detail caches after any ingestion activity.
-    const generation = await this.redis.invalidateCache('jobs');
-    this.logger.log(`Invalidated jobs cache (generation ${generation})`);
+    // Bust job list/detail + analytics overview caches after any ingestion activity.
+    const jobsGen = await this.redis.invalidateCache('jobs');
+    const analyticsGen = await this.redis.invalidateCache('analytics');
+    this.logger.log(
+      `Invalidated caches: jobs v${jobsGen}, analytics v${analyticsGen}`,
+    );
 
     // Push the most recently ingested jobs (new + re-verified) so the UI refreshes instantly.
     if (allTouchedJobs.length > 0) {
@@ -339,7 +343,7 @@ export class IngestionService {
     todayStart.setHours(0, 0, 0, 0);
 
     const [totalActiveJobs, newJobsToday] = await Promise.all([
-      this.prisma.job.count({ where: { isActive: true } }),
+      this.prisma.job.count({ where: listableJobsWhere() }),
       this.prisma.job.count({
         where: { scrapedAt: { gte: todayStart } },
       }),
