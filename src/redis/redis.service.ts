@@ -25,7 +25,10 @@ const GEN_MEMORY_TTL_MS = 5_000;
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   private readonly client: Redis;
-  private readonly genMemory = new Map<CacheNamespace, { value: number; at: number }>();
+  private readonly genMemory = new Map<
+    CacheNamespace,
+    { value: number; at: number }
+  >();
 
   constructor(private readonly configService: ConfigService<AppConfig, true>) {
     this.client = this.createClient();
@@ -36,13 +39,16 @@ export class RedisService implements OnModuleDestroy {
     const redisConfig = this.configService.get('redis', { infer: true });
 
     if (redisConfig.url) {
-      return new Redis(redisConfig.url);
+      return new Redis(redisConfig.url, {
+        keyPrefix: 'app1:',
+      });
     }
 
     return new Redis({
       host: redisConfig.host,
       port: redisConfig.port,
       password: redisConfig.password,
+      keyPrefix: 'app1:',
       tls: redisConfig.tls ? {} : undefined,
     });
   }

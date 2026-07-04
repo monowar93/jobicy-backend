@@ -21,27 +21,25 @@ import { ExpiryProcessor } from '@/queue/processors/expiry.processor';
       inject: [ConfigService],
       useFactory: (config: ConfigService<AppConfig, true>) => {
         const redis = config.get('redis', { infer: true });
-        if (redis.url) {
+        const connection = redis.url
+          ? { url: redis.url, maxRetriesPerRequest: null }
+          : {
+              host: redis.host,
+              port: redis.port,
+              password: redis.password,
+              maxRetriesPerRequest: null,
+              ...(redis.tls ? { tls: {} } : {}),
+            };
+
         return {
-          connection: { url: redis.url },
+          connection,
+          // Azure Redis / Redis Cluster: hash tag keeps all BullMQ keys in one slot.
+          prefix: '{bull}',
           defaultJobOptions: {
             removeOnComplete: { count: 50 },
             removeOnFail: { count: 20 },
           },
         };
-      }
-      return {
-        connection: {
-          host: redis.host,
-          port: redis.port,
-          password: redis.password,
-          ...(redis.tls ? { tls: {} } : {}),
-        },
-        defaultJobOptions: {
-          removeOnComplete: { count: 50 },
-          removeOnFail: { count: 20 },
-        },
-      };
       },
     }),
     BullModule.registerQueue(
