@@ -5,6 +5,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { WinstonModule } from 'nest-winston';
 import { ALIAS_CHECK } from '@/alias-check';
 import { AuthModule } from '@/auth/auth.module';
+import { UsersModule } from '@/users/users.module';
 import { ApplicationsModule } from '@/applications/applications.module';
 import { IngestionModule } from '@/ingestion/ingestion.module';
 import { JobsModule } from '@/jobs/jobs.module';
@@ -40,6 +41,7 @@ void ALIAS_CHECK;
     PrismaModule,
     RedisModule,
     AuthModule,
+    UsersModule,
     SavedJobsModule,
     ApplicationsModule,
     JobsModule,

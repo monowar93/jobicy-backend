@@ -73,10 +73,23 @@ export class SavedJobsService {
       orderBy,
     });
 
+    const jobIds = rows.map((row) => row.jobId);
+    const appliedRows =
+      jobIds.length > 0
+        ? await this.prisma.application.findMany({
+            where: { userId, jobId: { in: jobIds } },
+            select: { jobId: true },
+          })
+        : [];
+    const appliedSet = new Set(appliedRows.map((r) => r.jobId));
+
     return rows.map((row) => ({
       savedAt: row.createdAt.toISOString(),
       note: row.note,
-      job: toJobCardDto(row.job, { isSaved: true, isApplied: false }),
+      job: toJobCardDto(row.job, {
+        isSaved: true,
+        isApplied: appliedSet.has(row.jobId),
+      }),
     }));
   }
 
@@ -114,6 +127,7 @@ export class SavedJobsService {
         return { job: { company: 'asc' } };
       case 'oldest':
         return { createdAt: 'asc' };
+      case 'latest':
       case 'newest':
       default:
         return { createdAt: 'desc' };

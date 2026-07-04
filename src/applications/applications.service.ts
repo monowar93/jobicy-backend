@@ -47,9 +47,22 @@ export class ApplicationsService {
       orderBy: { appliedAt: 'desc' },
     });
 
+    const jobIds = rows.map((row) => row.jobId);
+    const savedRows =
+      jobIds.length > 0
+        ? await this.prisma.savedJob.findMany({
+            where: { userId, jobId: { in: jobIds } },
+            select: { jobId: true },
+          })
+        : [];
+    const savedSet = new Set(savedRows.map((r) => r.jobId));
+
     return rows.map((row) => ({
       appliedAt: row.appliedAt.toISOString(),
-      job: toJobCardDto(row.job, { isSaved: false, isApplied: true }),
+      job: toJobCardDto(row.job, {
+        isSaved: savedSet.has(row.jobId),
+        isApplied: true,
+      }),
     }));
   }
 
